@@ -1,0 +1,34 @@
+Article:
+   fields:
+       title: varchar(50)
+       text: text
+   relations:
+       Category: one
+       Pepyaka: one
+       Tag: many
+
+
+Category:
+   fields:
+       title: varchar(50)
+   relations:
+       Article: many
+
+
+Pepyaka:
+   fields:
+       title: varchar(50)
+   relations:
+       # Article: many
+
+Pepyaka:
+   fields:
+       title: varchar(50)
+   relations:
+       Article: many
+
+Tag:
+  fields:
+    title: text
+  relations:
+    Article: many
