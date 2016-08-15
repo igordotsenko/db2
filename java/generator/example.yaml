@@ -6,15 +6,14 @@ Article:
        Category: one
        Tag: many
        Pepyaka: many
-       Article: one
 
 
 
-Category:
-   fields:
-       title: varchar(50)
-   relations:
-       Article: many
+# Category:
+#    fields:
+#        title: varchar(50)
+#    relations:
+#        Article: many
 
 
 # Pepyaka:
@@ -29,8 +28,8 @@ Category:
 #    relations:
 #        Article: many
 
-# Tag:
-#   fields:
-#     title: text
-#   relations:
-#     Article: many
+Tag:
+  fields:
+    title: text
+  relations:
+    Article: many
