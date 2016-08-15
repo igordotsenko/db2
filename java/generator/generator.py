@@ -40,12 +40,14 @@ class Generator:
         fieldsTree = parsedYamlTree[currentTable]["fields"]
         fieldNames = fieldsTree.keys()
 
-        query = self.createTableQueryHeaderPattern.format(tableName)
-        query += self.generateTableFieldsString(tableName, fieldsTree)
-        query += self.createTableTimestampsFieldsPattern.format(tableName)
-        query += self.getOneToManyRealations(parsedYamlTree, currentTable)
+        query = [ 
+        self.createTableQueryHeaderPattern.format(tableName), 
+        self.generateTableFieldsString(tableName, fieldsTree), 
+        self.createTableTimestampsFieldsPattern.format(tableName), 
+        self.getOneToManyRealations(parsedYamlTree, currentTable) 
+        ]
 
-        return query + ");"
+        return ''.join(query) + ");"
 
     def generateTableFieldsString(self, tableName, fieldsTree):
         fieldNames = fieldsTree.keys()
