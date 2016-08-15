@@ -30,14 +30,14 @@ class Generator:
 
             
             
-            aList.append(self.createFunctionPattern.format("insert", tableName, "created"))
-            aList.append(self.createFunctionPattern.format("update", tableName, "updated"))
-            aList.append(self.createTriggerPattern.format("insert", "INSERT", tableName, "insert"))
-            aList.append(self.createTriggerPattern.format("update", "UPDATE", tableName, "update"))
+            # aList.append(self.createFunctionPattern.format("insert", tableName, "created"))
+            # aList.append(self.createFunctionPattern.format("update", tableName, "updated"))
+            # aList.append(self.createTriggerPattern.format("insert", "INSERT", tableName, "insert"))
+            # aList.append(self.createTriggerPattern.format("update", "UPDATE", tableName, "update"))
 
-            self.getManyToManyRelatios(parsedYamlTree, table)
+        #     self.getManyToManyRelatios(parsedYamlTree, table)
 
-        aList.append(self.generateCrossTableStatements())
+        # aList.append(self.generateCrossTableStatements())
 
         return aList
 
@@ -75,7 +75,8 @@ class Generator:
         if not oneToManyList:
             return ""
 
-        filteredList = self.filterOneToManyRealtions(parsedYamlTree, oneToManyList, currentTable)
+        filteredList = []
+        self.filterRelations(self.filterOneToMany, filteredList, oneToManyList, parsedYamlTree, currentTable)
 
         if not filteredList:
             return ""
@@ -85,19 +86,6 @@ class Generator:
         
         return ", {}, {}".format(foreignKeysFields, foreignKeys)
 
-    def filterOneToManyRealtions(self, parsedYamlTree, oneToManyList, currentTable):
-        filteredList = []
-
-        for relation in oneToManyList:
-            try:
-                if parsedYamlTree[relation]["relations"][currentTable] == "many":
-                    filteredList.append(relation.lower())
-            except KeyError as e:
-                print currentTable + ": incorrect relation with " + str(e)
-            except TypeError as e:
-                print relation +  " has no relation type with " + currentTable
-
-        return filteredList
 
     def getManyToManyRelatios(self, parsedYamlTree, currentTable):
         manyToManyList = self.getRelationsList(parsedYamlTree, currentTable, "many")
@@ -115,6 +103,35 @@ class Generator:
                 print currentTable + ": incorrect relation with " + str(e)
             except TypeError as e:
                 print relation +  " has no relation type with " + currentTable
+
+
+    def filterRelations(self, filterFunction, resultData, inputData, parsedYamlTree, currentTable):
+        for relation in inputData:
+            try:
+                oppositeRelation = parsedYamlTree[relation]["relations"][currentTable]
+
+                if oppositeRelation == "many" and relation != currentTable:
+                    filterFunction(resultData, relation, currentTable)
+            except KeyError as e:
+                print currentTable + ": incorrect relation with " + str(e)
+            except TypeError as e:
+                print relation +  " has no relation type with " + currentTable
+
+
+    def filterOneToMany(*args):
+        filteredList = args[1]
+        relation = args[2]
+
+        filteredList.append(relation.lower())
+
+
+    def filterManyToMany(*args):
+        relation = args[2]
+        currentTable = args[3]
+
+        self.manyToManySet.add( (relation.lower(), currentTable.lower()) )
+
+
 
     def generateCrossTableStatements(self):
         crossTables = []
