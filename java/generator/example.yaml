@@ -4,28 +4,30 @@ Article:
        text: text
    relations:
        Category: one
-       Pepyaka: one
        Tag: many
-
-
-Category:
-   fields:
-       title: varchar(50)
-   relations:
+       Pepyaka: many
        Article: many
 
 
-Pepyaka:
-   fields:
-       title: varchar(50)
-   relations:
-       # Article: many
 
-Pepyaka:
-   fields:
-       title: varchar(50)
-   relations:
-       Article: many
+# Category:
+#    fields:
+#        title: varchar(50)
+#    relations:
+#        Article: many
+
+
+# Pepyaka:
+#    fields:
+#        title: varchar(50)
+#    relations:
+#        # Article: many
+
+# Pepyaka:
+#    fields:
+#        title: varchar(50)
+#    relations:
+#        Article: many
 
 Tag:
   fields:

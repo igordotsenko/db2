@@ -9,22 +9,35 @@ class Generator:
     createFunctionPattern = "CREATE FUNCTION {}_timpestamp() RETURNS TRIGGER AS $$ BEGIN NEW.{}_{} = now(); RETURN NEW; END; $$ language 'plpgsql';"
     createTriggerPattern = "CREATE TRIGGER {}_trigger BEFORE {} ON {} FOR EACH ROW EXECUTE PROCEDURE {}_timpestamp();"
 
-    foreignKeyFieldSeparator = "_id INTEGER"
+    crossTablesPattern = "CREATE TABLE {0}_{1} ({0}_id integer NOT NULL, {1}_id integer NOT NULL);"
+
+    manyToManySet = set()
 
     def getDDL(self, filePath):
         aList = []
         
         parsedYamlTree = self.parseYaml(filePath)
+
+        if not parsedYamlTree:
+            return "File is empty"
+
         tables = parsedYamlTree.keys()
 
         for table in tables:
             tableName = table.lower()
 
             aList.append(self.generateCreateTableStatement(parsedYamlTree, table))
-            # aList.append(self.createFunctionPattern.format("insert", tableName, "created"))
-            # aList.append(self.createFunctionPattern.format("update", tableName, "updated"))
-            # aList.append(self.createTriggerPattern.format("insert", "INSERT", tableName, "insert"))
-            # aList.append(self.createTriggerPattern.format("update", "UPDATE", tableName, "update"))
+
+            
+            
+            aList.append(self.createFunctionPattern.format("insert", tableName, "created"))
+            aList.append(self.createFunctionPattern.format("update", tableName, "updated"))
+            aList.append(self.createTriggerPattern.format("insert", "INSERT", tableName, "insert"))
+            aList.append(self.createTriggerPattern.format("update", "UPDATE", tableName, "update"))
+
+            self.getManyToManyRelatios(parsedYamlTree, table)
+
+        aList.append(self.generateCrossTableStatements())
 
         return aList
 
@@ -57,12 +70,7 @@ class Generator:
             .format(tableName, fieldName, fieldsTree[fieldName]), fieldNames)))
 
     def getOneToManyRealations(self, parsedYamlTree, currentTable):
-        try:
-            relations = parsedYamlTree[currentTable]["relations"]
-        except KeyError as e:
-            return ""
-
-        oneToManyList = [ entity for (entity, relationType) in relations.iteritems() if relationType == "one" ]
+        oneToManyList = self.getRelationsList(parsedYamlTree, currentTable,  "one")
 
         if not oneToManyList:
             return ""
@@ -90,6 +98,52 @@ class Generator:
                 print relation +  " has no relation type with " + currentTable
 
         return filteredList
+
+    def getManyToManyRelatios(self, parsedYamlTree, currentTable):
+        manyToManyList = self.getRelationsList(parsedYamlTree, currentTable, "many")
+        filteredSet = self.filterManyToManyRelations(parsedYamlTree, manyToManyList, currentTable)
+
+
+    def filterManyToManyRelations(self, parsedYamlTree, manyToManyList, currentTable):
+        for relation in manyToManyList:
+            try:
+                oppositeRelation = parsedYamlTree[relation]["relations"][currentTable]
+
+                if oppositeRelation == "many" and relation != currentTable:
+                    self.manyToManySet.add( (relation.lower(), currentTable.lower()) )
+            except KeyError as e:
+                print currentTable + ": incorrect relation with " + str(e)
+            except TypeError as e:
+                print relation +  " has no relation type with " + currentTable
+
+    def generateCrossTableStatements(self):
+        crossTables = []
+
+        self.manyToManySet = set((a, b) if a <= b else (b, a) for a, b in self.manyToManySet)
+
+        for tab_a, tab_b in self.manyToManySet:
+            crossTables.append(self.crossTablesPattern.format(tab_a, tab_b))
+
+        return " ".join(crossTables)
+
+
+    def getRelations(self, parsedYamlTree, currentTable):
+        try:
+            return parsedYamlTree[currentTable]["relations"]
+        except KeyError as e:
+            return None
+
+    def getRelationsList(self, parsedYamlTree, currentTable, relationTypeName):
+        relations = self.getRelations(parsedYamlTree, currentTable)
+
+        if not relations:
+            return ""
+
+        return self.getRelationEntetiesList(relations, relationTypeName)
+
+    def getRelationEntetiesList(self, relations, relationTypeName):
+        return [ entity for (entity, relationType) in relations.iteritems() if relationType == relationTypeName ]
+
 
 
 
